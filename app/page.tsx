@@ -33,6 +33,12 @@ export default function Home() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <a
+            href="/api-configs"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+          >
+            Open API Configs
+          </a>
+          <a
             href="/login"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
