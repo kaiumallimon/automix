@@ -21,6 +21,8 @@ export interface RunStepResult {
   executionTimeMs: number;
   expectedStatus: number;
   actualStatus: number | null;
+  referencedVariables: string[];
+  capturedVariables: Record<string, string>;
   request: ExecutedRequestSnapshot;
   response: ExecutedResponseSnapshot | null;
   errorMessage: string | null;
@@ -33,5 +35,6 @@ export interface ScenarioRunResult {
   finishedAt: string;
   totalExecutionTimeMs: number;
   outcome: RunOutcome;
+  finalVariables: Record<string, string>;
   steps: RunStepResult[];
 }

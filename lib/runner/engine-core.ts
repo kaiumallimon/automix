@@ -9,6 +9,12 @@ import type {
 } from "@/types/run";
 
 import { executeHttpRequest } from "./request-handler";
+import {
+  captureVariablesFromResponse,
+  collectReferencedVariables,
+  resolveJsonValue,
+  resolveTemplateString,
+} from "./variable-resolver";
 
 interface RunnerCoreInput {
   scenario: Scenario;
@@ -35,6 +41,19 @@ function mergeHeaders(
     ...defaultHeaders,
     ...stepHeaders,
   };
+}
+
+function resolveHeaders(
+  headers: Record<string, string>,
+  variables: Record<string, string>
+): Record<string, string> {
+  const resolved: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    resolved[key] = resolveTemplateString(value, variables);
+  }
+
+  return resolved;
 }
 
 function shouldSendBody(method: string): boolean {
@@ -92,6 +111,8 @@ function makeRunStepResult(input: {
   executionTimeMs: number;
   expectedStatus: number;
   actualStatus: number | null;
+  referencedVariables: string[];
+  capturedVariables: Record<string, string>;
   request: {
     method: string;
     url: string;
@@ -113,6 +134,8 @@ function makeRunStepResult(input: {
     executionTimeMs: input.executionTimeMs,
     expectedStatus: input.expectedStatus,
     actualStatus: input.actualStatus,
+    referencedVariables: input.referencedVariables,
+    capturedVariables: input.capturedVariables,
     request: input.request,
     response: input.response,
     errorMessage: input.errorMessage,
@@ -127,18 +150,27 @@ export async function runScenarioCore(
 
   const stepResults: RunStepResult[] = [];
   let runOutcome: RunOutcome = "passed";
+  let runtimeVariables: Record<string, string> = {};
 
   for (const step of input.scenario.steps) {
     const stepStart = nowEpochMs();
 
-    const requestUrl = parseUrl(input.apiConfig.baseUrl, step.endpoint);
-    const requestHeaders = mergeHeaders(
-      input.apiConfig.defaultHeaders,
-      step.headers
+    const referencedVariables = collectReferencedVariables(
+      `${step.endpoint}\n${JSON.stringify(step.headers)}\n${JSON.stringify(step.body)}`
     );
-    const requestBody = toRequestBody(step.body, step.method);
 
     try {
+      const resolvedEndpoint = resolveTemplateString(step.endpoint, runtimeVariables);
+      const requestUrl = parseUrl(input.apiConfig.baseUrl, resolvedEndpoint);
+
+      const requestHeaders = resolveHeaders(
+        mergeHeaders(input.apiConfig.defaultHeaders, step.headers),
+        runtimeVariables
+      );
+
+      const resolvedBody = resolveJsonValue(step.body, runtimeVariables);
+      const requestBody = toRequestBody(resolvedBody, step.method);
+
       const response = await executeHttpRequest({
         method: step.method,
         url: requestUrl,
@@ -154,6 +186,13 @@ export async function runScenarioCore(
       const outcome: RunOutcome =
         statusMatches && responseMatches ? "passed" : "failed";
 
+      const captureResult = captureVariablesFromResponse(
+        step.capture,
+        response.body,
+        runtimeVariables
+      );
+      runtimeVariables = captureResult.nextVariables;
+
       if (outcome === "failed") {
         runOutcome = "failed";
       }
@@ -165,6 +204,8 @@ export async function runScenarioCore(
           executionTimeMs: nowEpochMs() - stepStart,
           expectedStatus: step.expectedStatus,
           actualStatus: response.status,
+          referencedVariables,
+          capturedVariables: captureResult.capturedVariables,
           request: {
             method: step.method,
             url: requestUrl,
@@ -188,11 +229,13 @@ export async function runScenarioCore(
           executionTimeMs: nowEpochMs() - stepStart,
           expectedStatus: step.expectedStatus,
           actualStatus: null,
+          referencedVariables,
+          capturedVariables: {},
           request: {
             method: step.method,
-            url: requestUrl,
-            headers: requestHeaders,
-            body: requestBody,
+            url: parseUrl(input.apiConfig.baseUrl, step.endpoint),
+            headers: mergeHeaders(input.apiConfig.defaultHeaders, step.headers),
+            body: toRequestBody(step.body, step.method),
           },
           response: null,
           errorMessage: message,
@@ -210,6 +253,7 @@ export async function runScenarioCore(
     finishedAt: new Date(finishedEpoch).toISOString(),
     totalExecutionTimeMs: finishedEpoch - startedEpoch,
     outcome: runOutcome,
+    finalVariables: runtimeVariables,
     steps: stepResults,
   };
 }
