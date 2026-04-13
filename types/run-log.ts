@@ -24,6 +24,7 @@ export interface RunStepRecord extends BaseEntity {
   stepName: string;
   outcome: RunOutcome;
   expectedStatus: number;
+  expectedResponse: unknown;
   actualStatus: number | null;
   executionTimeMs: number;
   referencedVariables: string[];

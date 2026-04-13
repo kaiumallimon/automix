@@ -110,6 +110,7 @@ function makeRunStepResult(input: {
   outcome: RunOutcome;
   executionTimeMs: number;
   expectedStatus: number;
+  expectedResponse: unknown;
   actualStatus: number | null;
   referencedVariables: string[];
   capturedVariables: Record<string, string>;
@@ -133,6 +134,7 @@ function makeRunStepResult(input: {
     outcome: input.outcome,
     executionTimeMs: input.executionTimeMs,
     expectedStatus: input.expectedStatus,
+    expectedResponse: input.expectedResponse,
     actualStatus: input.actualStatus,
     referencedVariables: input.referencedVariables,
     capturedVariables: input.capturedVariables,
@@ -203,6 +205,7 @@ export async function runScenarioCore(
           outcome,
           executionTimeMs: nowEpochMs() - stepStart,
           expectedStatus: step.expectedStatus,
+          expectedResponse: step.expectedResponse,
           actualStatus: response.status,
           referencedVariables,
           capturedVariables: captureResult.capturedVariables,
@@ -228,6 +231,7 @@ export async function runScenarioCore(
           outcome: "failed",
           executionTimeMs: nowEpochMs() - stepStart,
           expectedStatus: step.expectedStatus,
+          expectedResponse: step.expectedResponse,
           actualStatus: null,
           referencedVariables,
           capturedVariables: {},

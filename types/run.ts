@@ -20,6 +20,7 @@ export interface RunStepResult {
   outcome: RunOutcome;
   executionTimeMs: number;
   expectedStatus: number;
+  expectedResponse: unknown;
   actualStatus: number | null;
   referencedVariables: string[];
   capturedVariables: Record<string, string>;
