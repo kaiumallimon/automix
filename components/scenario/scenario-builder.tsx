@@ -15,6 +15,7 @@ import {
   fetchScenariosClient,
   updateScenarioClient,
 } from "@/lib/scenario/client";
+import { triggerScenarioRunClient } from "@/lib/runs/client";
 import type { ApiConfig } from "@/types/api-config";
 import type { Scenario, ScenarioStep } from "@/types/scenario";
 
@@ -57,6 +58,9 @@ export function ScenarioBuilder() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [isRunningScenarioId, setIsRunningScenarioId] = useState<string | null>(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const formTitle = useMemo(
@@ -205,6 +209,22 @@ export function ScenarioBuilder() {
       setErrorMessage(message);
     } finally {
       setIsDeletingId(null);
+    }
+  }
+
+  async function handleRunScenario(scenario: Scenario): Promise<void> {
+    setIsRunningScenarioId(scenario.id);
+    setErrorMessage(null);
+
+    try {
+      const result = await triggerScenarioRunClient(scenario.id);
+      router.push(`/runs/${result.run.id}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to execute scenario.";
+      setErrorMessage(message);
+    } finally {
+      setIsRunningScenarioId(null);
     }
   }
 
@@ -366,6 +386,14 @@ export function ScenarioBuilder() {
                     >
                       Open Step Editor
                     </Link>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void handleRunScenario(scenario)}
+                      disabled={isRunningScenarioId === scenario.id}
+                    >
+                      {isRunningScenarioId === scenario.id ? "Running..." : "Run Now"}
+                    </Button>
                     <Button
                       type="button"
                       size="sm"

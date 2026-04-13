@@ -47,6 +47,12 @@ export default function Home() {
             Open Scenarios
           </Link>
           <Link
+            href="/runs"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+          >
+            Open Runs
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
