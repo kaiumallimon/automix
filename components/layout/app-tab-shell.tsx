@@ -14,6 +14,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Logo } from "@/components/layout/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
@@ -94,10 +95,8 @@ export function AppTabShell({ children }: AppTabShellProps) {
       <header className="sticky top-0 z-30 border-b border-white/20 bg-black/80 text-white backdrop-blur-[20px] backdrop-saturate-180">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-white/65">
-                Automix Control Panel
-              </p>
+            <div className="space-y-1">
+              <Logo tone="dark" size="sm" descriptor="Control Panel" />
               <h1 className="text-lg font-semibold text-white">Workspace</h1>
             </div>
             <div className="flex items-center gap-2">
