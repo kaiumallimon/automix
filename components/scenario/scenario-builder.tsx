@@ -218,10 +218,37 @@ export function ScenarioBuilder() {
 
     try {
       const result = await triggerScenarioRunClient(scenario.id);
-      router.push(`/runs/${result.run.id}`);
+
+      if (result.mode === "single" && result.run) {
+        router.push(`/runs/${result.run.id}`);
+      } else {
+        router.push("/runs");
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to execute scenario.";
+      setErrorMessage(message);
+    } finally {
+      setIsRunningScenarioId(null);
+    }
+  }
+
+  async function handleRunFuzzScenario(scenario: Scenario): Promise<void> {
+    setIsRunningScenarioId(scenario.id);
+    setErrorMessage(null);
+
+    try {
+      await triggerScenarioRunClient(scenario.id, {
+        fuzz: true,
+        maxVariants: 4,
+      });
+
+      router.push("/runs");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to execute fuzz scenario runs.";
       setErrorMessage(message);
     } finally {
       setIsRunningScenarioId(null);
@@ -393,6 +420,17 @@ export function ScenarioBuilder() {
                       disabled={isRunningScenarioId === scenario.id}
                     >
                       {isRunningScenarioId === scenario.id ? "Running..." : "Run Now"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void handleRunFuzzScenario(scenario)}
+                      disabled={isRunningScenarioId === scenario.id}
+                    >
+                      {isRunningScenarioId === scenario.id
+                        ? "Running..."
+                        : "Run Fuzz"}
                     </Button>
                     <Button
                       type="button"

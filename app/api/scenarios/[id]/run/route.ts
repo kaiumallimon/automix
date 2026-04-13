@@ -8,7 +8,7 @@ import {
   requireSessionPayload,
   UnauthorizedSessionError,
 } from "@/lib/auth/session-server";
-import { runScenarioCore } from "@/lib/runner";
+import { runFuzzScenarioBatch, runScenarioCore } from "@/lib/runner";
 import {
   getScenarioById,
   ScenarioNotFoundError,
@@ -17,6 +17,29 @@ import { logScenarioRun } from "@/lib/runs/service";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
+}
+
+interface RunRequestBody {
+  fuzz?: unknown;
+  maxVariants?: unknown;
+}
+
+function parseRunOptions(body: RunRequestBody): {
+  fuzz: boolean;
+  maxVariants: number;
+} {
+  const fuzz = body.fuzz === true;
+  const rawMaxVariants =
+    typeof body.maxVariants === "number" && Number.isInteger(body.maxVariants)
+      ? body.maxVariants
+      : 4;
+
+  const maxVariants = Math.min(20, Math.max(1, rawMaxVariants));
+
+  return {
+    fuzz,
+    maxVariants,
+  };
 }
 
 function toErrorResponse(error: unknown): Response {
@@ -39,15 +62,52 @@ function toErrorResponse(error: unknown): Response {
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: RouteContext
 ): Promise<Response> {
   try {
     const session = await requireSessionPayload();
     const { id } = await context.params;
 
+    let requestBody: RunRequestBody = {};
+
+    try {
+      requestBody = (await request.json()) as RunRequestBody;
+    } catch {
+      requestBody = {};
+    }
+
+    const runOptions = parseRunOptions(requestBody);
+
     const scenario = await getScenarioById(session.sub, id);
     const apiConfig = await getApiConfigById(session.sub, scenario.apiConfigId);
+
+    if (runOptions.fuzz) {
+      const fuzzResults = await runFuzzScenarioBatch({
+        scenario,
+        apiConfig,
+        maxVariants: runOptions.maxVariants,
+      });
+
+      const persistedRuns = [];
+
+      for (const fuzzResult of fuzzResults) {
+        const run = await logScenarioRun(session.sub, apiConfig.id, fuzzResult.result);
+
+        persistedRuns.push({
+          label: fuzzResult.label,
+          run,
+          summary: fuzzResult.result,
+        });
+      }
+
+      return NextResponse.json({
+        data: {
+          mode: "fuzz",
+          runs: persistedRuns,
+        },
+      });
+    }
 
     const runResult = await runScenarioCore({
       scenario,
@@ -58,6 +118,7 @@ export async function POST(
 
     return NextResponse.json({
       data: {
+        mode: "single",
         run: persistedRun,
         summary: runResult,
       },

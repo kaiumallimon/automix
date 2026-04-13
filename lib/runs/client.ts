@@ -12,8 +12,19 @@ interface ApiErrorResponse {
 }
 
 export interface TriggerRunResponse {
-  run: RunRecord;
-  summary: ScenarioRunResult;
+  mode: "single" | "fuzz";
+  run?: RunRecord;
+  summary?: ScenarioRunResult;
+  runs?: Array<{
+    label: string;
+    run: RunRecord;
+    summary: ScenarioRunResult;
+  }>;
+}
+
+interface TriggerRunOptions {
+  fuzz?: boolean;
+  maxVariants?: number;
 }
 
 async function requestJson<T>(
@@ -74,12 +85,17 @@ export async function fetchRunWithStepsClient(runId: string): Promise<RunWithSte
 }
 
 export async function triggerScenarioRunClient(
-  scenarioId: string
+  scenarioId: string,
+  options?: TriggerRunOptions
 ): Promise<TriggerRunResponse> {
   const payload = await requestJson<ApiResponse<TriggerRunResponse>>(
     `/api/scenarios/${scenarioId}/run`,
     {
       method: "POST",
+      body: JSON.stringify({
+        fuzz: options?.fuzz ?? false,
+        maxVariants: options?.maxVariants,
+      }),
     }
   );
 
