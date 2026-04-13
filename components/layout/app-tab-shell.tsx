@@ -84,7 +84,11 @@ export function AppTabShell({ children }: AppTabShellProps) {
               <p className="hidden max-w-[18rem] truncate text-sm text-white/72 sm:block">
                 {user?.email}
               </p>
-              <Button variant="outline" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                className="h-9 border-white/25 bg-white/8 px-3 text-white hover:bg-white/16 hover:text-white focus-visible:border-white/40 focus-visible:ring-white/30"
+                onClick={handleLogout}
+              >
                 Logout
               </Button>
             </div>
