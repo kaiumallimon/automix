@@ -1,12 +1,12 @@
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
-import { getFirebaseApp } from "./app";
+import { getFirebaseAdminApp } from "./admin";
 
 let firestoreServerInstance: Firestore | null = null;
 
 export function getFirebaseServerFirestore(): Firestore {
   if (!firestoreServerInstance) {
-    firestoreServerInstance = getFirestore(getFirebaseApp());
+    firestoreServerInstance = getFirestore(getFirebaseAdminApp());
   }
 
   return firestoreServerInstance;

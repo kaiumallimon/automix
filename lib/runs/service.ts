@@ -1,15 +1,6 @@
 import "server-only";
 
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  type DocumentData,
-} from "firebase/firestore";
+import type { DocumentData } from "firebase-admin/firestore";
 
 import { getFirebaseServerFirestore } from "@/lib/firebase/firestore-server";
 import type { ScenarioRunResult } from "@/types/run";
@@ -25,11 +16,11 @@ export class RunNotFoundError extends Error {
 }
 
 function getRunCollectionRef() {
-  return collection(getFirebaseServerFirestore(), RUN_COLLECTION);
+  return getFirebaseServerFirestore().collection(RUN_COLLECTION);
 }
 
 function getRunStepCollectionRef() {
-  return collection(getFirebaseServerFirestore(), RUN_STEP_COLLECTION);
+  return getFirebaseServerFirestore().collection(RUN_STEP_COLLECTION);
 }
 
 function sanitizeForFirestore(value: unknown): unknown {
@@ -232,7 +223,7 @@ export async function logScenarioRun(
 ): Promise<RunRecord> {
   const now = new Date().toISOString();
 
-  const runDocRef = await addDoc(getRunCollectionRef(), {
+  const runDocRef = await getRunCollectionRef().add({
     userId,
     scenarioId: runResult.scenarioId,
     scenarioName: runResult.scenarioName,
@@ -247,7 +238,7 @@ export async function logScenarioRun(
   });
 
   for (const [stepIndex, step] of runResult.steps.entries()) {
-    await addDoc(getRunStepCollectionRef(), {
+    await getRunStepCollectionRef().add({
       userId,
       runId: runDocRef.id,
       scenarioId: runResult.scenarioId,
@@ -286,13 +277,19 @@ export async function logScenarioRun(
 }
 
 async function getOwnedRunOrThrow(userId: string, runId: string): Promise<RunRecord> {
-  const snapshot = await getDoc(doc(getRunCollectionRef(), runId));
+  const snapshot = await getRunCollectionRef().doc(runId).get();
 
-  if (!snapshot.exists()) {
+  if (!snapshot.exists) {
     throw new RunNotFoundError(runId);
   }
 
-  const run = mapRunRecord(snapshot.id, snapshot.data());
+  const data = snapshot.data();
+
+  if (!data) {
+    throw new RunNotFoundError(runId);
+  }
+
+  const run = mapRunRecord(snapshot.id, data);
 
   if (run.userId !== userId) {
     throw new RunNotFoundError(runId);
@@ -305,13 +302,13 @@ export async function listRuns(
   userId: string,
   scenarioId?: string
 ): Promise<RunRecord[]> {
-  const conditions = [where("userId", "==", userId)];
+  let runsQuery = getRunCollectionRef().where("userId", "==", userId);
 
   if (scenarioId) {
-    conditions.push(where("scenarioId", "==", scenarioId));
+    runsQuery = runsQuery.where("scenarioId", "==", scenarioId);
   }
 
-  const snapshot = await getDocs(query(getRunCollectionRef(), ...conditions));
+  const snapshot = await runsQuery.get();
 
   const runs = snapshot.docs.map((docSnapshot) =>
     mapRunRecord(docSnapshot.id, docSnapshot.data())
@@ -326,13 +323,10 @@ export async function getRunWithSteps(
 ): Promise<RunWithSteps> {
   const run = await getOwnedRunOrThrow(userId, runId);
 
-  const snapshot = await getDocs(
-    query(
-      getRunStepCollectionRef(),
-      where("userId", "==", userId),
-      where("runId", "==", runId)
-    )
-  );
+  const snapshot = await getRunStepCollectionRef()
+    .where("userId", "==", userId)
+    .where("runId", "==", runId)
+    .get();
 
   const steps = snapshot.docs
     .map((docSnapshot) => mapRunStepRecord(docSnapshot.id, docSnapshot.data()))

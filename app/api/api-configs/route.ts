@@ -19,6 +19,23 @@ function toErrorResponse(error: unknown): Response {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  if (
+    error instanceof Error &&
+    (error.message.toLowerCase().includes("insufficient permissions") ||
+      error.message.toLowerCase().includes("permission-denied") ||
+      error.message.toLowerCase().includes("default credentials") ||
+      error.message.toLowerCase().includes("private key") ||
+      error.message.toLowerCase().includes("project id"))
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Server Firestore credentials are missing or invalid. Configure Firebase Admin environment variables.",
+      },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json(
     { error: "Failed to process API config request." },
     { status: 500 }

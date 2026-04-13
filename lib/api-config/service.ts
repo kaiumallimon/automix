@@ -1,17 +1,6 @@
 import "server-only";
 
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-  type DocumentData,
-} from "firebase/firestore";
+import type { DocumentData } from "firebase-admin/firestore";
 
 import { getFirebaseServerFirestore } from "@/lib/firebase/firestore-server";
 import type {
@@ -33,7 +22,7 @@ export class ApiConfigNotFoundError extends Error {
 }
 
 function getCollectionRef() {
-  return collection(getFirebaseServerFirestore(), API_CONFIG_COLLECTION);
+  return getFirebaseServerFirestore().collection(API_CONFIG_COLLECTION);
 }
 
 function asObject(value: unknown, label: string): Record<string, unknown> {
@@ -99,9 +88,7 @@ function mapApiConfigDocument(id: string, payload: DocumentData): ApiConfig {
 }
 
 export async function listApiConfigs(userId: string): Promise<ApiConfig[]> {
-  const snapshot = await getDocs(
-    query(getCollectionRef(), where("userId", "==", userId))
-  );
+  const snapshot = await getCollectionRef().where("userId", "==", userId).get();
 
   const configs = snapshot.docs.map((docSnapshot) =>
     mapApiConfigDocument(docSnapshot.id, docSnapshot.data())
@@ -117,7 +104,7 @@ export async function createApiConfig(
   const input = parseApiConfigInput(rawInput);
   const now = new Date().toISOString();
 
-  const docRef = await addDoc(getCollectionRef(), {
+  const docRef = await getCollectionRef().add({
     userId,
     name: input.name,
     baseUrl: input.baseUrl,
@@ -143,14 +130,19 @@ async function getOwnedApiConfigOrThrow(
   userId: string,
   apiConfigId: string
 ): Promise<ApiConfig> {
-  const docRef = doc(getCollectionRef(), apiConfigId);
-  const snapshot = await getDoc(docRef);
+  const snapshot = await getCollectionRef().doc(apiConfigId).get();
 
-  if (!snapshot.exists()) {
+  if (!snapshot.exists) {
     throw new ApiConfigNotFoundError(apiConfigId);
   }
 
-  const config = mapApiConfigDocument(snapshot.id, snapshot.data());
+  const data = snapshot.data();
+
+  if (!data) {
+    throw new ApiConfigNotFoundError(apiConfigId);
+  }
+
+  const config = mapApiConfigDocument(snapshot.id, data);
 
   if (config.userId !== userId) {
     throw new ApiConfigNotFoundError(apiConfigId);
@@ -180,7 +172,7 @@ export async function updateApiConfig(
     updatedAt: new Date().toISOString(),
   };
 
-  await updateDoc(doc(getCollectionRef(), apiConfigId), {
+  await getCollectionRef().doc(apiConfigId).update({
     name: updated.name,
     baseUrl: updated.baseUrl,
     defaultHeaders: updated.defaultHeaders,
@@ -196,7 +188,7 @@ export async function deleteApiConfig(
   apiConfigId: string
 ): Promise<void> {
   await getOwnedApiConfigOrThrow(userId, apiConfigId);
-  await deleteDoc(doc(getCollectionRef(), apiConfigId));
+  await getCollectionRef().doc(apiConfigId).delete();
 }
 
 export function parseApiConfigForCreate(rawInput: unknown): ApiConfigInput {

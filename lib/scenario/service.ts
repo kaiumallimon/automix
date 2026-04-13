@@ -1,17 +1,6 @@
 import "server-only";
 
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-  type DocumentData,
-} from "firebase/firestore";
+import type { DocumentData } from "firebase-admin/firestore";
 
 import { getFirebaseServerFirestore } from "@/lib/firebase/firestore-server";
 import type {
@@ -36,7 +25,7 @@ export class ScenarioNotFoundError extends Error {
 }
 
 function getCollectionRef() {
-  return collection(getFirebaseServerFirestore(), SCENARIO_COLLECTION);
+  return getFirebaseServerFirestore().collection(SCENARIO_COLLECTION);
 }
 
 function asObject(value: unknown, label: string): Record<string, unknown> {
@@ -194,13 +183,19 @@ async function getOwnedScenarioOrThrow(
   userId: string,
   scenarioId: string
 ): Promise<Scenario> {
-  const snapshot = await getDoc(doc(getCollectionRef(), scenarioId));
+  const snapshot = await getCollectionRef().doc(scenarioId).get();
 
-  if (!snapshot.exists()) {
+  if (!snapshot.exists) {
     throw new ScenarioNotFoundError(scenarioId);
   }
 
-  const scenario = mapScenario(snapshot.id, snapshot.data());
+  const data = snapshot.data();
+
+  if (!data) {
+    throw new ScenarioNotFoundError(scenarioId);
+  }
+
+  const scenario = mapScenario(snapshot.id, data);
 
   if (scenario.userId !== userId) {
     throw new ScenarioNotFoundError(scenarioId);
@@ -210,9 +205,7 @@ async function getOwnedScenarioOrThrow(
 }
 
 export async function listScenarios(userId: string): Promise<Scenario[]> {
-  const snapshot = await getDocs(
-    query(getCollectionRef(), where("userId", "==", userId))
-  );
+  const snapshot = await getCollectionRef().where("userId", "==", userId).get();
 
   const scenarios = snapshot.docs.map((docSnapshot) =>
     mapScenario(docSnapshot.id, docSnapshot.data())
@@ -228,7 +221,7 @@ export async function createScenario(
   const input = parseScenarioInput(rawInput);
   const now = new Date().toISOString();
 
-  const docRef = await addDoc(getCollectionRef(), {
+  const docRef = await getCollectionRef().add({
     userId,
     apiConfigId: input.apiConfigId,
     name: input.name,
@@ -271,7 +264,7 @@ export async function updateScenario(
     updatedAt: new Date().toISOString(),
   };
 
-  await updateDoc(doc(getCollectionRef(), scenarioId), {
+  await getCollectionRef().doc(scenarioId).update({
     apiConfigId: updated.apiConfigId,
     name: updated.name,
     description: updated.description,
@@ -287,7 +280,7 @@ export async function deleteScenario(
   scenarioId: string
 ): Promise<void> {
   await getOwnedScenarioOrThrow(userId, scenarioId);
-  await deleteDoc(doc(getCollectionRef(), scenarioId));
+  await getCollectionRef().doc(scenarioId).delete();
 }
 
 export function parseScenarioForCreate(rawInput: unknown): ScenarioInput {
