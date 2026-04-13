@@ -400,7 +400,7 @@ export function ScenarioBuilder() {
           </form>
         </article>
 
-        <article className="rounded-2xl border border-border bg-card p-6">
+        <article className="rounded-2xl border border-border bg-card p-6 lg:self-start">
           <h2 className="text-lg font-semibold text-card-foreground">Saved Scenarios</h2>
           <div className="mt-4 space-y-3">
             {isLoading ? (

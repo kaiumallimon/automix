@@ -257,20 +257,40 @@ export async function updateScenario(
 ): Promise<Scenario> {
   const patch = parseScenarioPatchInput(rawPatch);
   const existing = await getOwnedScenarioOrThrow(userId, scenarioId);
+  const now = new Date().toISOString();
 
   const updated: Scenario = {
     ...existing,
-    ...patch,
-    updatedAt: new Date().toISOString(),
+    apiConfigId:
+      patch.apiConfigId === undefined ? existing.apiConfigId : patch.apiConfigId,
+    name: patch.name === undefined ? existing.name : patch.name,
+    description:
+      patch.description === undefined ? existing.description : patch.description,
+    steps: patch.steps === undefined ? existing.steps : patch.steps,
+    updatedAt: now,
   };
 
-  await getCollectionRef().doc(scenarioId).update({
-    apiConfigId: updated.apiConfigId,
-    name: updated.name,
-    description: updated.description,
-    steps: updated.steps,
-    updatedAt: updated.updatedAt,
-  });
+  const firestorePatch: Record<string, unknown> = {
+    updatedAt: now,
+  };
+
+  if (patch.apiConfigId !== undefined) {
+    firestorePatch.apiConfigId = patch.apiConfigId;
+  }
+
+  if (patch.name !== undefined) {
+    firestorePatch.name = patch.name;
+  }
+
+  if (patch.description !== undefined) {
+    firestorePatch.description = patch.description;
+  }
+
+  if (patch.steps !== undefined) {
+    firestorePatch.steps = patch.steps;
+  }
+
+  await getCollectionRef().doc(scenarioId).update(firestorePatch);
 
   return updated;
 }

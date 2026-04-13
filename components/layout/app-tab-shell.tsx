@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
   BarChart3,
+  CircleHelp,
   GitBranch,
   LogOut,
   Settings,
@@ -39,6 +40,11 @@ const APP_TABS: Array<{
     href: "/runs",
     label: "Runs",
     icon: BarChart3,
+  },
+  {
+    href: "/help",
+    label: "Help",
+    icon: CircleHelp,
   },
 ];
 
