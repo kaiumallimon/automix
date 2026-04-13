@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   const setupChecklist = [
     "Next.js App Router + TypeScript baseline",
@@ -32,30 +34,30 @@ export default function Home() {
         </ul>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
+          <Link
             href="/api-configs"
             className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
           >
             Open API Configs
-          </a>
-          <a
+          </Link>
+          <Link
             href="/scenarios"
             className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
           >
             Open Scenarios
-          </a>
-          <a
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
           >
             Sign in
-          </a>
-          <a
+          </Link>
+          <Link
             href="/register"
             className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted"
           >
             Register
-          </a>
+          </Link>
         </div>
       </section>
     </main>
