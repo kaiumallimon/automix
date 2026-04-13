@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchRunsClient } from "@/lib/runs/client";
 import type { RunRecord } from "@/types/run-log";
@@ -22,17 +24,41 @@ function formatDuration(ms: number): string {
   return `${seconds} s`;
 }
 
+function RunHistorySkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article
+          key={`run-skeleton-${index}`}
+          className="rounded-xl border border-border bg-muted/40 p-4"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-44" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="mt-4 h-8 w-32" />
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export function RunResultsDashboard() {
   const router = useRouter();
-  const { user, isAuthenticated, authLoading, logout } = useAuth();
+  const { user, isAuthenticated, authLoading } = useAuth();
 
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadRuns = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage(null);
 
     try {
       const loadedRuns = await fetchRunsClient();
@@ -40,7 +66,7 @@ export function RunResultsDashboard() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to load run results.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -60,18 +86,16 @@ export function RunResultsDashboard() {
   if (authLoading || (!isAuthenticated && !user)) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
       </main>
     );
   }
 
-  async function handleLogout(): Promise<void> {
-    await logout();
-    router.replace("/login");
-  }
-
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-8">
+    <main className="flex w-full flex-1 flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Results Dashboard</p>
@@ -83,21 +107,12 @@ export function RunResultsDashboard() {
           <Button variant="outline" onClick={() => void loadRuns()}>
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
         </div>
       </header>
 
-      {errorMessage ? (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-
       <section className="rounded-2xl border border-border bg-card p-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading run history...</p>
+          <RunHistorySkeleton />
         ) : runs.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No runs found. Trigger a scenario run from the Scenario Builder.

@@ -1,5 +1,7 @@
 "use client";
 
+import { Toaster } from "@/components/ui/sonner";
+
 import { AuthProvider } from "./auth-provider";
 
 interface AppProvidersProps {
@@ -7,5 +9,10 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      {children}
+      <Toaster />
+    </AuthProvider>
+  );
 }

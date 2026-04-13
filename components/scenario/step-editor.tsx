@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import {
   fetchScenarioByIdClient,
@@ -170,8 +172,6 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -185,7 +185,6 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
 
     async function loadScenario(): Promise<void> {
       setIsLoading(true);
-      setErrorMessage(null);
 
       try {
         const loadedScenario = await fetchScenarioByIdClient(scenarioId);
@@ -195,7 +194,7 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to load scenario.";
-        setErrorMessage(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -246,7 +245,10 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
   if (authLoading || (!isAuthenticated && !user)) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
       </main>
     );
   }
@@ -278,12 +280,11 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
       setSelectedStepIndex(next.length - 1);
       return next;
     });
-    setSuccessMessage(null);
   }
 
   function removeSelectedStep(): void {
     if (stepDrafts.length <= 1) {
-      setErrorMessage("A scenario must contain at least one step.");
+      toast.warning("A scenario must contain at least one step.");
       return;
     }
 
@@ -320,8 +321,6 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
     }
 
     setIsSaving(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const parsedSteps = stepDrafts.map((draft, index) => parseDraft(draft, index));
@@ -338,18 +337,18 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
           : current
       );
 
-      setSuccessMessage("Step configuration saved.");
+      toast.success("Step configuration saved.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to save scenario steps.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">
+    <main className="flex w-full flex-1 flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Step Editor</p>
@@ -371,19 +370,31 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
       </header>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading scenario steps...</p>
+        <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
+          </div>
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+            <Skeleton className="h-6 w-32" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-48 w-full rounded-lg" />
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </div>
+          </div>
+        </section>
       ) : null}
 
-      {errorMessage ? (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      {successMessage ? (
-        <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          {successMessage}
-        </p>
+      {!isLoading && !selectedStep ? (
+        <p className="text-sm text-muted-foreground">Scenario steps are unavailable.</p>
       ) : null}
 
       {selectedStep ? (

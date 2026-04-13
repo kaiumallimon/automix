@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import {
   createApiConfigClient,
@@ -56,23 +58,42 @@ function parseHeadersFromText(text: string): ApiConfigHeaders {
   return normalized;
 }
 
+function ConfigListSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`api-config-skeleton-${index}`}
+          className="rounded-xl border border-border bg-muted/40 p-4"
+        >
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="mt-2 h-3 w-48" />
+          <Skeleton className="mt-4 h-24 w-full rounded-lg" />
+          <div className="mt-4 flex gap-2">
+            <Skeleton className="h-7 w-14" />
+            <Skeleton className="h-7 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ApiConfigManager() {
   const router = useRouter();
-  const { user, isAuthenticated, authLoading, logout } = useAuth();
+  const { user, isAuthenticated, authLoading } = useAuth();
 
   const [apiConfigs, setApiConfigs] = useState<ApiConfig[]>([]);
   const [isLoadingConfigs, setIsLoadingConfigs] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
 
   const isBusy = isSaving || isLoadingConfigs;
 
   const loadConfigs = useCallback(async () => {
     setIsLoadingConfigs(true);
-    setErrorMessage(null);
 
     try {
       const configs = await fetchApiConfigs();
@@ -82,7 +103,7 @@ export function ApiConfigManager() {
         error instanceof Error
           ? error.message
           : "Failed to load API configs.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsLoadingConfigs(false);
     }
@@ -107,20 +128,17 @@ export function ApiConfigManager() {
   if (authLoading || (!isAuthenticated && !user)) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+        </div>
       </main>
     );
-  }
-
-  async function handleLogout(): Promise<void> {
-    await logout();
-    router.replace("/login");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsSaving(true);
-    setErrorMessage(null);
 
     try {
       const payload: ApiConfigInput = {
@@ -138,13 +156,14 @@ export function ApiConfigManager() {
 
       setFormState(INITIAL_FORM_STATE);
       setEditingId(null);
+      toast.success(editingId ? "API config updated." : "API config created.");
       await loadConfigs();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Failed to save API config.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -158,13 +177,11 @@ export function ApiConfigManager() {
       defaultHeadersText: stringifyHeaders(config.defaultHeaders),
       authType: config.authType,
     });
-    setErrorMessage(null);
   }
 
   function resetForm(): void {
     setEditingId(null);
     setFormState(INITIAL_FORM_STATE);
-    setErrorMessage(null);
   }
 
   async function handleDelete(config: ApiConfig): Promise<void> {
@@ -177,7 +194,6 @@ export function ApiConfigManager() {
     }
 
     setIsDeletingId(config.id);
-    setErrorMessage(null);
 
     try {
       await deleteApiConfigClient(config.id);
@@ -186,32 +202,27 @@ export function ApiConfigManager() {
         resetForm();
       }
 
+      toast.success("API config deleted.");
       await loadConfigs();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Failed to delete API config.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsDeletingId(null);
     }
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-8">
+    <main className="flex w-full flex-1 flex-col gap-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">API Configuration Module</p>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Manage API Configs
           </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
         </div>
       </header>
 
@@ -285,12 +296,6 @@ export function ApiConfigManager() {
               />
             </label>
 
-            {errorMessage ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {errorMessage}
-              </p>
-            ) : null}
-
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={isBusy}>
                 {isSaving
@@ -312,7 +317,7 @@ export function ApiConfigManager() {
           <h2 className="text-lg font-semibold text-card-foreground">Saved Configurations</h2>
           <div className="mt-4 space-y-3">
             {isLoadingConfigs ? (
-              <p className="text-sm text-muted-foreground">Loading configs...</p>
+              <ConfigListSkeleton />
             ) : apiConfigs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No API configs yet. Create your first one from the form.

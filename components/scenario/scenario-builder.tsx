@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import {
   fetchApiConfigs,
@@ -45,9 +47,38 @@ function makeDefaultScenarioStep(): ScenarioStep {
   };
 }
 
+function ScenarioListSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`scenario-skeleton-${index}`}
+          className="rounded-xl border border-border bg-muted/40 p-4"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-3 w-full" />
+          <Skeleton className="mt-2 h-3 w-11/12" />
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Skeleton className="h-7 w-24" />
+            <Skeleton className="h-7 w-28" />
+            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-7 w-24" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ScenarioBuilder() {
   const router = useRouter();
-  const { user, isAuthenticated, authLoading, logout } = useAuth();
+  const { user, isAuthenticated, authLoading } = useAuth();
 
   const [apiConfigs, setApiConfigs] = useState<ApiConfig[]>([]);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -61,7 +92,6 @@ export function ScenarioBuilder() {
   const [isRunningScenarioId, setIsRunningScenarioId] = useState<string | null>(
     null
   );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const formTitle = useMemo(
     () => (editingScenarioId ? "Update Scenario Metadata" : "Create Scenario"),
@@ -72,7 +102,6 @@ export function ScenarioBuilder() {
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage(null);
 
     try {
       const [loadedConfigs, loadedScenarios] = await Promise.all([
@@ -93,7 +122,7 @@ export function ScenarioBuilder() {
         error instanceof Error
           ? error.message
           : "Failed to load scenario builder data.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -113,26 +142,23 @@ export function ScenarioBuilder() {
   if (authLoading || (!isAuthenticated && !user)) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-6 w-44" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
       </main>
     );
-  }
-
-  async function handleLogout(): Promise<void> {
-    await logout();
-    router.replace("/login");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
     if (!formState.apiConfigId) {
-      setErrorMessage("Select an API config first.");
+      toast.warning("Select an API config first.");
       return;
     }
 
     setIsSaving(true);
-    setErrorMessage(null);
 
     try {
       if (editingScenarioId) {
@@ -151,13 +177,14 @@ export function ScenarioBuilder() {
       }
 
       resetForm();
+      toast.success(editingScenarioId ? "Scenario updated." : "Scenario created.");
       await loadData();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Failed to save scenario.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -178,7 +205,6 @@ export function ScenarioBuilder() {
       name: scenario.name,
       description: scenario.description ?? "",
     });
-    setErrorMessage(null);
   }
 
   async function handleDeleteScenario(scenario: Scenario): Promise<void> {
@@ -191,7 +217,6 @@ export function ScenarioBuilder() {
     }
 
     setIsDeletingId(scenario.id);
-    setErrorMessage(null);
 
     try {
       await deleteScenarioClient(scenario.id);
@@ -200,13 +225,14 @@ export function ScenarioBuilder() {
         resetForm();
       }
 
+      toast.success("Scenario deleted.");
       await loadData();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Failed to delete scenario.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsDeletingId(null);
     }
@@ -214,7 +240,6 @@ export function ScenarioBuilder() {
 
   async function handleRunScenario(scenario: Scenario): Promise<void> {
     setIsRunningScenarioId(scenario.id);
-    setErrorMessage(null);
 
     try {
       const result = await triggerScenarioRunClient(scenario.id);
@@ -227,7 +252,7 @@ export function ScenarioBuilder() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to execute scenario.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsRunningScenarioId(null);
     }
@@ -235,7 +260,6 @@ export function ScenarioBuilder() {
 
   async function handleRunFuzzScenario(scenario: Scenario): Promise<void> {
     setIsRunningScenarioId(scenario.id);
-    setErrorMessage(null);
 
     try {
       await triggerScenarioRunClient(scenario.id, {
@@ -244,12 +268,13 @@ export function ScenarioBuilder() {
       });
 
       router.push("/runs");
+      toast.success("Fuzz run launched.");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Failed to execute fuzz scenario runs.";
-      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsRunningScenarioId(null);
     }
@@ -262,19 +287,13 @@ export function ScenarioBuilder() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-8">
+    <main className="flex w-full flex-1 flex-col gap-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Scenario Builder</p>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Build and Manage Scenarios
           </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
         </div>
       </header>
 
@@ -340,12 +359,6 @@ export function ScenarioBuilder() {
               />
             </label>
 
-            {errorMessage ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {errorMessage}
-              </p>
-            ) : null}
-
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={isBusy || apiConfigs.length === 0}>
                 {isSaving
@@ -367,7 +380,7 @@ export function ScenarioBuilder() {
           <h2 className="text-lg font-semibold text-card-foreground">Saved Scenarios</h2>
           <div className="mt-4 space-y-3">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading scenarios...</p>
+              <ScenarioListSkeleton />
             ) : scenarios.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No scenarios yet. Create your first one from the form.

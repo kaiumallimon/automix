@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchRunWithStepsClient } from "@/lib/runs/client";
 import type { RunWithSteps } from "@/types/run-log";
@@ -29,6 +31,44 @@ function prettyJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+function RunDetailSkeleton() {
+  return (
+    <>
+      <section className="rounded-2xl border border-border bg-card p-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={`run-metric-skeleton-${index}`} className="space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <aside className="space-y-2 rounded-2xl border border-border bg-card p-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+        </aside>
+
+        <article className="space-y-4 rounded-2xl border border-border bg-card p-6">
+          <Skeleton className="h-6 w-40" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-16 w-full rounded-lg" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-40 w-full rounded-lg" />
+            <Skeleton className="h-40 w-full rounded-lg" />
+          </div>
+        </article>
+      </section>
+    </>
+  );
+}
+
 export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
   const router = useRouter();
   const { user, isAuthenticated, authLoading } = useAuth();
@@ -36,7 +76,6 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
   const [runDetail, setRunDetail] = useState<RunWithSteps | null>(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -50,7 +89,6 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
 
     async function loadRunDetail(): Promise<void> {
       setIsLoading(true);
-      setErrorMessage(null);
 
       try {
         const result = await fetchRunWithStepsClient(runId);
@@ -59,7 +97,7 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to load run details.";
-        setErrorMessage(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -78,13 +116,16 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
   if (authLoading || (!isAuthenticated && !user)) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-12">
-        <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        <div className="w-full max-w-md space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-32 w-full rounded-2xl" />
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">
+    <main className="flex w-full flex-1 flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Step Detail Viewer</p>
@@ -105,15 +146,7 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
         </div>
       </header>
 
-      {errorMessage ? (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading run detail...</p>
-      ) : null}
+      {isLoading ? <RunDetailSkeleton /> : null}
 
       {runDetail ? (
         <>
@@ -267,6 +300,10 @@ export function RunStepDetailViewer({ runId }: RunStepDetailViewerProps) {
             ) : null}
           </section>
         </>
+      ) : null}
+
+      {!isLoading && !runDetail ? (
+        <p className="text-sm text-muted-foreground">Run details are unavailable.</p>
       ) : null}
     </main>
   );
