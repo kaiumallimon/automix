@@ -296,6 +296,9 @@ export function ScenarioBuilder() {
     return found ? found.name : "Unknown API config";
   }
 
+  const selectedApiConfigName =
+    apiConfigs.find((config) => config.id === formState.apiConfigId)?.name ?? null;
+
   return (
     <main className="flex w-full flex-1 flex-col gap-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -325,7 +328,15 @@ export function ScenarioBuilder() {
                 disabled={apiConfigs.length === 0}
               >
                 <SelectTrigger id="scenario-api-config" className="w-full">
-                  <SelectValue placeholder="Create an API config first" />
+                  <SelectValue
+                    placeholder={
+                      apiConfigs.length === 0
+                        ? "Create an API config first"
+                        : "Select API config"
+                    }
+                  >
+                    {selectedApiConfigName}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {apiConfigs.map((config) => (
