@@ -259,7 +259,7 @@ export function ApiConfigManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="api-config-base-url">Base URL (Without Trailing Slash)</Label>
+              <Label htmlFor="api-config-base-url">Base URL</Label>
               <Input
                 id="api-config-base-url"
                 required
