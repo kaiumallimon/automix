@@ -6,7 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import {
   fetchScenarioByIdClient,
@@ -462,112 +472,122 @@ export function StepEditor({ scenarioId }: StepEditorProps) {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Step Name</span>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="step-name">Step Name</Label>
+                <Input
+                  id="step-name"
                   value={selectedStep.name}
                   onChange={(event) => updateSelectedDraft("name", event.target.value)}
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Step ID</span>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="step-id">Step ID</Label>
+                <Input
+                  id="step-id"
                   value={selectedStep.id}
                   onChange={(event) => updateSelectedDraft("id", event.target.value)}
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Method</span>
-                <select
+              <div className="space-y-2">
+                <Label htmlFor="step-method">Method</Label>
+                <Select
                   value={selectedStep.method}
-                  onChange={(event) =>
-                    updateSelectedDraft("method", event.target.value as ScenarioHttpMethod)
+                  onValueChange={(value) =>
+                    value
+                      ? updateSelectedDraft("method", value as ScenarioHttpMethod)
+                      : undefined
                   }
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
-                  {SCENARIO_METHODS.map((method) => (
-                    <option key={method} value={method}>
-                      {method}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger id="step-method" className="w-full">
+                    <SelectValue placeholder="Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SCENARIO_METHODS.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Endpoint</span>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="step-endpoint">Endpoint</Label>
+                <Input
+                  id="step-endpoint"
                   value={selectedStep.endpoint}
                   onChange={(event) =>
                     updateSelectedDraft("endpoint", event.target.value)
                   }
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                   placeholder="/issues/{{issueId}}"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Expected Status</span>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="step-expected-status">Expected Status</Label>
+                <Input
+                  id="step-expected-status"
                   value={selectedStep.expectedStatusText}
                   onChange={(event) =>
                     updateSelectedDraft("expectedStatusText", event.target.value)
                   }
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 />
-              </label>
+              </div>
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Headers (JSON)</span>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="step-headers">Headers (JSON)</Label>
+                <Textarea
+                  id="step-headers"
                   rows={8}
                   value={selectedStep.headersText}
                   onChange={(event) =>
                     updateSelectedDraft("headersText", event.target.value)
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="min-h-48 font-mono text-xs"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Body (JSON)</span>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="step-body">Body (JSON)</Label>
+                <Textarea
+                  id="step-body"
                   rows={8}
                   value={selectedStep.bodyText}
                   onChange={(event) => updateSelectedDraft("bodyText", event.target.value)}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="min-h-48 font-mono text-xs"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Expected Response (JSON)</span>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="step-expected-response">Expected Response (JSON)</Label>
+                <Textarea
+                  id="step-expected-response"
                   rows={8}
                   value={selectedStep.expectedResponseText}
                   onChange={(event) =>
                     updateSelectedDraft("expectedResponseText", event.target.value)
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="min-h-48 font-mono text-xs"
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-foreground">Capture Variables (JSON)</span>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="step-capture">Capture Variables (JSON)</Label>
+                <Textarea
+                  id="step-capture"
                   rows={8}
                   value={selectedStep.captureText}
                   onChange={(event) =>
                     updateSelectedDraft("captureText", event.target.value)
                   }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="min-h-48 font-mono text-xs"
                   placeholder='{"token":"data.token"}'
                 />
-              </label>
+              </div>
             </div>
 
             <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4">

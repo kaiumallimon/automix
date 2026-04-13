@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import {
+  BarChart3,
+  GitBranch,
+  LogOut,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,20 +20,27 @@ interface AppTabShellProps {
   children: React.ReactNode;
 }
 
-const APP_TABS = [
+const APP_TABS: Array<{
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}> = [
   {
     href: "/api-configs",
     label: "API Configs",
+    icon: Settings,
   },
   {
     href: "/scenarios",
     label: "Scenarios",
+    icon: GitBranch,
   },
   {
     href: "/runs",
     label: "Runs",
+    icon: BarChart3,
   },
-] as const;
+];
 
 function isTabActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -81,15 +95,16 @@ export function AppTabShell({ children }: AppTabShellProps) {
               <h1 className="text-lg font-semibold text-white">Workspace</h1>
             </div>
             <div className="flex items-center gap-2">
-              <p className="hidden max-w-[18rem] truncate text-sm text-white/72 sm:block">
-                {user?.email}
-              </p>
               <Button
                 variant="ghost"
-                className="h-9 border-white/25 bg-white/8 px-3 text-white hover:bg-white/16 hover:text-white focus-visible:border-white/40 focus-visible:ring-white/30"
+                title="Logout"
+                className="h-9 max-w-[16rem] border-white/25 bg-white/8 px-3 text-white hover:bg-white/16 hover:text-white focus-visible:border-white/40 focus-visible:ring-white/30"
                 onClick={handleLogout}
               >
-                Logout
+                <span className="max-w-48 truncate text-xs text-white/75">
+                  {user?.email ?? "Account"}
+                </span>
+                <LogOut className="size-4 text-red-400" />
               </Button>
             </div>
           </div>
@@ -98,18 +113,20 @@ export function AppTabShell({ children }: AppTabShellProps) {
             <div className="flex w-max min-w-full items-center gap-1 border border-white/25 bg-black/30 p-1 sm:w-full">
               {APP_TABS.map((tab) => {
                 const active = isTabActive(pathname, tab.href);
+                const TabIcon = tab.icon;
 
                 return (
                   <Link
                     key={tab.href}
                     href={tab.href}
                     className={cn(
-                      "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center px-3 text-sm font-medium whitespace-nowrap transition sm:min-w-0 sm:flex-1",
+                      "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center gap-1.5 px-3 text-sm font-medium whitespace-nowrap transition sm:min-w-0 sm:flex-1",
                       active
                         ? "bg-[#0071e3] text-white"
                         : "text-white/75 hover:bg-white/10 hover:text-white"
                     )}
                   >
+                    <TabIcon className="size-3.5" />
                     {tab.label}
                   </Link>
                 );

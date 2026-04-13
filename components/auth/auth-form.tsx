@@ -6,6 +6,8 @@ import { FirebaseError } from "firebase/app";
 import { type FormEvent, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 
 type AuthFormMode = "login" | "register";
@@ -94,22 +96,24 @@ export function AuthForm({ mode }: AuthFormProps) {
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{subtitle}</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-foreground">Email</span>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="auth-email">Email</Label>
+          <Input
+            id="auth-email"
             type="email"
             autoComplete="email"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={formDisabled}
-            className="h-11 w-full border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
+            className="h-11"
           />
-        </label>
+        </div>
 
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-foreground">Password</span>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="auth-password">Password</Label>
+          <Input
+            id="auth-password"
             type="password"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             required
@@ -117,9 +121,9 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             disabled={formDisabled}
-            className="h-11 w-full border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
+            className="h-11"
           />
-        </label>
+        </div>
 
         {errorMessage ? (
           <p className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

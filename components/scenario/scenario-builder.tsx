@@ -6,7 +6,17 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import {
   fetchApiConfigs,
@@ -301,33 +311,36 @@ export function ScenarioBuilder() {
         <article className="rounded-2xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-card-foreground">{formTitle}</h2>
           <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">API Config</span>
-              <select
+            <div className="space-y-2">
+              <Label htmlFor="scenario-api-config">API Config</Label>
+              <Select
                 required
                 value={formState.apiConfigId}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setFormState((current) => ({
                     ...current,
-                    apiConfigId: event.target.value,
+                    apiConfigId: value ?? "",
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                disabled={apiConfigs.length === 0}
               >
-                {apiConfigs.length === 0 ? (
-                  <option value="">Create an API config first</option>
-                ) : null}
-                {apiConfigs.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <SelectTrigger id="scenario-api-config" className="w-full">
+                  <SelectValue placeholder="Create an API config first" />
+                </SelectTrigger>
+                <SelectContent>
+                  {apiConfigs.map((config) => (
+                    <SelectItem key={config.id} value={config.id}>
+                      {config.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Scenario Name</span>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="scenario-name">Scenario Name</Label>
+              <Input
+                id="scenario-name"
                 required
                 minLength={2}
                 maxLength={120}
@@ -338,14 +351,14 @@ export function ScenarioBuilder() {
                     name: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 placeholder="Login and create issue"
               />
-            </label>
+            </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Description</span>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="scenario-description">Description</Label>
+              <Textarea
+                id="scenario-description"
                 rows={4}
                 value={formState.description}
                 onChange={(event) =>
@@ -354,10 +367,10 @@ export function ScenarioBuilder() {
                     description: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="min-h-28"
                 placeholder="High-level intent of this scenario"
               />
-            </label>
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={isBusy || apiConfigs.length === 0}>

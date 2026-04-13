@@ -5,7 +5,17 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import {
   createApiConfigClient,
@@ -230,9 +240,10 @@ export function ApiConfigManager() {
         <article className="rounded-2xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-card-foreground">{formTitle}</h2>
           <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Name</span>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="api-config-name">Name</Label>
+              <Input
+                id="api-config-name"
                 required
                 minLength={2}
                 maxLength={80}
@@ -243,14 +254,14 @@ export function ApiConfigManager() {
                     name: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 placeholder="Internal API Name"
               />
-            </label>
+            </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Base URL</span>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="api-config-base-url">Base URL (Without Trailing Slash)</Label>
+              <Input
+                id="api-config-base-url"
                 required
                 value={formState.baseUrl}
                 onChange={(event) =>
@@ -259,31 +270,38 @@ export function ApiConfigManager() {
                     baseUrl: event.target.value,
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 placeholder="https://api.example.com"
               />
-            </label>
+            </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Auth Type</span>
-              <select
+            <div className="space-y-2">
+              <Label htmlFor="api-config-auth-type">Auth Type</Label>
+              <Select
                 value={formState.authType}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setFormState((current) => ({
                     ...current,
-                    authType: event.target.value as ApiConfigAuthType,
+                    authType:
+                      value === "none" || value === "jwt"
+                        ? value
+                        : current.authType,
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
               >
-                <option value="none">none</option>
-                <option value="jwt">jwt</option>
-              </select>
-            </label>
+                <SelectTrigger id="api-config-auth-type" className="w-full">
+                  <SelectValue placeholder="Select auth type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">none</SelectItem>
+                  <SelectItem value="jwt">jwt</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-foreground">Default Headers (JSON)</span>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="api-config-default-headers">Default Headers (JSON)</Label>
+              <Textarea
+                id="api-config-default-headers"
                 rows={8}
                 value={formState.defaultHeadersText}
                 onChange={(event) =>
@@ -292,9 +310,9 @@ export function ApiConfigManager() {
                     defaultHeadersText: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="min-h-40 font-mono text-xs"
               />
-            </label>
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <Button type="submit" disabled={isBusy}>
