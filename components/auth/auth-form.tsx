@@ -84,8 +84,11 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-7 shadow-sm sm:p-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
+    <div className="w-full border border-border bg-card p-6 shadow-[0_10px_30px_rgba(0,0,0,0.12)] sm:p-8">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        Automix Auth
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-card-foreground">
         {title}
       </h1>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{subtitle}</p>
@@ -100,7 +103,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={formDisabled}
-            className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
+            className="h-11 w-full border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
           />
         </label>
 
@@ -114,12 +117,12 @@ export function AuthForm({ mode }: AuthFormProps) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             disabled={formDisabled}
-            className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
+            className="h-11 w-full border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-60"
           />
         </label>
 
         {errorMessage ? (
-          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p className="border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {errorMessage}
           </p>
         ) : null}
