@@ -18,6 +18,19 @@ export async function syncSessionCookie(idToken: string | null): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(`Session sync failed with status ${response.status}.`);
+    let reason = "Unknown error.";
+
+    try {
+      const payload = (await response.json()) as { error?: unknown };
+      if (typeof payload.error === "string") {
+        reason = payload.error;
+      }
+    } catch {
+      reason = "Response body was not JSON.";
+    }
+
+    throw new Error(
+      `Session sync failed with status ${response.status}: ${reason}`
+    );
   }
 }

@@ -91,7 +91,20 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Session sync failed.";
+
+    if (
+      message.includes("AUTH_SESSION_SECRET") ||
+      message.includes("NEXT_PUBLIC_FIREBASE_API_KEY")
+    ) {
+      return NextResponse.json(
+        { error: "Auth session server configuration is missing." },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 }
